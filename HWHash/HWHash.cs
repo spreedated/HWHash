@@ -21,6 +21,7 @@
  *           ░  ░     ░  ░░ ░        ░  ░   ░     
  */
 
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
@@ -29,6 +30,9 @@ using System.Security;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Linq;
+
+namespace HWHash;
 
 public static class HWHash
 {
@@ -37,23 +41,24 @@ public static class HWHash
 
     private static MemoryMappedFile _memMap;
     private static HWINFO_MEM _memRegion;
-    private static HWHashStats _stats = new HWHashStats(0, 0, 0, 0);
+    private static HWHashStats _stats = new(0, 0, 0, 0);
     private static int _indexOrder = 0;
     private static CancellationTokenSource _pollingCTS;
     private static Task _pollingTask;
+    private static readonly ILogger logger;
 
     private static readonly Dictionary<uint, HWHASH_HEADER> _headers = new Dictionary<uint, HWHASH_HEADER>();
-    public static readonly ConcurrentDictionary<ulong, HWINFO_HASH> Sensors = new ConcurrentDictionary<ulong, HWINFO_HASH>();
-    public static readonly ConcurrentDictionary<ulong, HWINFO_HASH_MINI> SensorsMini = new ConcurrentDictionary<ulong, HWINFO_HASH_MINI>();
+    public static readonly ConcurrentDictionary<ulong, HwinfoHash> Sensors = new();
+    public static readonly ConcurrentDictionary<ulong, HwinfoHashMini> SensorsMini = new();
 
-    public static readonly List<string> RelevantSensors = new List<string>
-    {
+    public static readonly List<string> RelevantSensors =
+    [
         "Physical Memory Load", "Physical Memory Used", "P-core 0 VID", "P-core 0 Clock", "Ring/LLC Clock",
         "Total CPU Usage", "CPU Package", "Core Max", "CPU Package Power", "Vcore", "+12V", "SPD Hub Temperature",
         "GPU Temperature", "GPU Memory Junction Temperature", "GPU 8-pin #1 Input Voltage",
         "GPU 8-pin #2 Input Voltage", "GPU 8-pin #3 Input Voltage", "GPU Power (Total)", "GPU Core Load",
         "GPU Memory Controller Load", "Current DL rate", "Current UP rate", "Total Errors"
-    };
+    ];
 
     public static bool HighPriority { get; set; } = false;
     public static bool HighPrecision { get; set; } = false;
@@ -71,7 +76,7 @@ public static class HWHash
         BuildHeaders();
         if (HighPrecision) { _ = WinApi.TimeBeginPeriod(1); }
         ReadSensors();
-        _pollingCTS = new CancellationTokenSource();
+        _pollingCTS = new();
         _pollingTask = PollSensorsAsync(_pollingCTS.Token);
         return true;
     }
@@ -79,48 +84,49 @@ public static class HWHash
     /// <summary>Stops the polling loop.</summary>
     public static void Stop()
     {
-        if (_pollingCTS != null)
+        _pollingCTS?.Cancel();
+        _pollingCTS?.Dispose();
+
+        if (HighPrecision)
         {
-            _pollingCTS.Cancel();
-            _pollingCTS = null;
+            _ = WinApi.TimeEndPeriod(1);
         }
-        if (HighPrecision) { _ = WinApi.TimeEndPeriod(1); }
     }
 
     /// <summary>Returns JSON-serialized sensor data. If order==true, returns sensors in display order.</summary>
     public static string GetJsonString(bool order = false) =>
-        order ? JsonSerializer.Serialize<List<HWINFO_HASH>>(GetOrderedList()) :
-        JsonSerializer.Serialize<ConcurrentDictionary<ulong, HWINFO_HASH>>(Sensors);
+        order ? JsonSerializer.Serialize<List<HwinfoHash>>(GetOrderedList()) :
+        JsonSerializer.Serialize<ConcurrentDictionary<ulong, HwinfoHash>>(Sensors);
 
     /// <summary>Returns JSON-serialized minified sensor data. If order==true, returns sensors in display order.</summary>
     public static string GetJsonStringMini(bool order = false) =>
-        order ? JsonSerializer.Serialize<List<HWINFO_HASH_MINI>>(GetOrderedListMini()) :
-        JsonSerializer.Serialize<ConcurrentDictionary<ulong, HWINFO_HASH_MINI>>(SensorsMini);
+        order ? JsonSerializer.Serialize<List<HwinfoHashMini>>(GetOrderedListMini()) :
+        JsonSerializer.Serialize<ConcurrentDictionary<ulong, HwinfoHashMini>>(SensorsMini);
 
     /// <summary>Returns collection statistics (includes elapsed milliseconds and raw ticks).</summary>
     public static HWHashStats GetHWHashStats() => _stats;
 
     /// <summary>Returns sensors ordered by display index.</summary>
-    public static List<HWINFO_HASH> GetOrderedList()
+    public static List<HwinfoHash> GetOrderedList()
     {
-        List<HWINFO_HASH> list = new List<HWINFO_HASH>(Sensors.Values);
+        List<HwinfoHash> list = new List<HwinfoHash>(Sensors.Values);
         list.Sort(ExplicitComparison);
         return list;
     }
 
     /// <summary>Returns minified sensors ordered by display index.</summary>
-    public static List<HWINFO_HASH_MINI> GetOrderedListMini()
+    public static List<HwinfoHashMini> GetOrderedListMini()
     {
-        List<HWINFO_HASH_MINI> list = new List<HWINFO_HASH_MINI>(SensorsMini.Values);
+        List<HwinfoHashMini> list = new List<HwinfoHashMini>(SensorsMini.Values);
         list.Sort(ExplicitComparisonMini);
         return list;
     }
 
     /// <summary>Returns only relevant sensors.</summary>
-    public static List<HWINFO_HASH> GetRelevantList()
+    public static List<HwinfoHash> GetRelevantList()
     {
-        List<HWINFO_HASH> list = new List<HWINFO_HASH>();
-        foreach (HWINFO_HASH sensor in Sensors.Values)
+        List<HwinfoHash> list = new List<HwinfoHash>();
+        foreach (HwinfoHash sensor in Sensors.Values)
             if (RelevantSensors.Contains(sensor.NameDefault))
             {
                 string clean = sensor.NameDefault.Replace(" ", "").Replace("/", "");
@@ -169,19 +175,18 @@ public static class HWHash
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Error reading sensors: " + ex.Message);
+            logger?.LogError(ex, "Error reading sensors from shared memory.");
         }
         MiniBenchmark(1);
     }
-
     private static void UpdateSensorData(HWHASH_ELEMENT r)
     {
         ulong uid = FastConcat(r.ID, r.Index);
         if (!Sensors.ContainsKey(uid))
         {
             int order = Interlocked.Increment(ref _indexOrder) - 1;
-            HWINFO_HASH_MINI mini = new HWINFO_HASH_MINI(uid, r.NameCustom, r.Unit, r.Value, r.Value, order, TypeToString(r.SENSOR_TYPE));
-            HWINFO_HASH full = new HWINFO_HASH(
+            HwinfoHashMini mini = new HwinfoHashMini(uid, r.NameCustom, r.Unit, r.Value, r.Value, order, TypeToString(r.SENSOR_TYPE));
+            HwinfoHash full = new HwinfoHash(
                 TypeToString(r.SENSOR_TYPE),
                 r.Index, r.ID, uid,
                 r.NameDefault, r.NameCustom, r.Unit,
@@ -197,7 +202,7 @@ public static class HWHash
         {
             Sensors.AddOrUpdate(uid,
                 (ulong key) => throw new Exception("Unexpected condition."),
-                (ulong key, HWINFO_HASH prev) => prev with
+                (ulong key, HwinfoHash prev) => prev with
                 {
                     ValuePrev = prev.ValueNow,
                     ValueNow = r.Value,
@@ -207,7 +212,7 @@ public static class HWHash
                 });
             SensorsMini.AddOrUpdate(uid,
                 (ulong key) => throw new Exception("Unexpected condition."),
-                (ulong key, HWINFO_HASH_MINI prev) => prev with
+                (ulong key, HwinfoHashMini prev) => prev with
                 {
                     ValuePrev = prev.ValueNow,
                     ValueNow = r.Value
@@ -215,8 +220,8 @@ public static class HWHash
         }
     }
 
-    private static int ExplicitComparison(HWINFO_HASH a, HWINFO_HASH b) => a.IndexOrder.CompareTo(b.IndexOrder);
-    private static int ExplicitComparisonMini(HWINFO_HASH_MINI a, HWINFO_HASH_MINI b) => a.IndexOrder.CompareTo(b.IndexOrder);
+    private static int ExplicitComparison(HwinfoHash a, HwinfoHash b) => a.IndexOrder.CompareTo(b.IndexOrder);
+    private static int ExplicitComparisonMini(HwinfoHashMini a, HwinfoHashMini b) => a.IndexOrder.CompareTo(b.IndexOrder);
 
     private static string TypeToString(SENSOR_READING_TYPE t)
     {
@@ -238,7 +243,7 @@ public static class HWHash
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Error reading shared memory: " + ex.Message);
+            logger?.LogError(ex, "Failed to read HWiNFO shared memory.");
             return false;
         }
     }
@@ -265,7 +270,7 @@ public static class HWHash
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Error building headers: " + ex.Message);
+            logger?.LogError(ex, "Error building headers from shared memory.");
         }
         _stats = _stats with { TotalCategories = _memRegion.SS_SensorElements };
     }
@@ -277,25 +282,17 @@ public static class HWHash
         else _stats = _stats with { CollectionTime = _benchSW.ElapsedMilliseconds };
     }
 
-    private static ulong FastConcat(uint a, uint b) =>
-        b < 10 ? 10UL * a + b :
-        b < 100 ? 100UL * a + b :
-        b < 1000 ? 1000UL * a + b :
-        b < 10000 ? 10000UL * a + b :
-        b < 100000 ? 100000UL * a + b :
-        b < 1000000 ? 1000000UL * a + b :
-        b < 10000000 ? 10000000UL * a + b :
-        b < 100000000 ? 100000000UL * a + b :
-        1000000000UL * a + b;
+    private static ulong FastConcat(uint a, uint b)
+    {
+        return ((ulong)a << 32) | b;
+    }
 
     private static bool IsHWInfoRunning()
     {
         Process[] processes = Process.GetProcesses();
-        Regex regex = new Regex(@"hwinfo(?:32|64)?", RegexOptions.IgnoreCase);
-        foreach (Process proc in processes)
-            if (regex.IsMatch(proc.ProcessName))
-                return true;
-        return false;
+        Regex regex = new(@"hwinfo(?:32|64)?", RegexOptions.IgnoreCase);
+
+        return processes.Any(proc => regex.IsMatch(proc.ProcessName));
     }
 
     private static class WinApi
@@ -313,7 +310,7 @@ public static class HWHash
         public HWHashStats() : this(0, 0, 0, 0) { }
     }
 
-    public record struct HWINFO_HASH(
+    public record struct HwinfoHash(
         string ReadingType,
         uint SensorIndex,
         uint SensorID,
@@ -334,7 +331,7 @@ public static class HWHash
         int IndexOrder
     );
 
-    public record struct HWINFO_HASH_MINI(
+    public record struct HwinfoHashMini(
         ulong UniqueID,
         string NameCustom,
         string Unit,
@@ -386,19 +383,6 @@ public static class HWHash
         public uint OFFSET_Reading;
         public uint SIZE_Reading;
         public uint TOTAL_ReadingElements;
-    }
-
-    private enum SENSOR_READING_TYPE
-    {
-        SENSOR_TYPE_NONE,
-        SENSOR_TYPE_TEMP,
-        SENSOR_TYPE_VOLT,
-        SENSOR_TYPE_FAN,
-        SENSOR_TYPE_CURRENT,
-        SENSOR_TYPE_POWER,
-        SENSOR_TYPE_CLOCK,
-        SENSOR_TYPE_USAGE,
-        SENSOR_TYPE_OTHER,
     }
 
     private static readonly string[] SensorTypeStrings = new string[]
