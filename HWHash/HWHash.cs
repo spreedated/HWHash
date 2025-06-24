@@ -29,15 +29,6 @@ public static class HwHash
     public readonly static ConcurrentDictionary<ulong, HwInfoHash> Sensors = new();
     public readonly static ConcurrentDictionary<ulong, HwinfoHashMini> SensorsMini = new();
 
-    public readonly static string[] RelevantSensors =
-    [
-        "Physical Memory Load", "Physical Memory Used", "P-core 0 VID", "P-core 0 Clock", "Ring/LLC Clock",
-        "Total CPU Usage", "CPU Package", "Core Max", "CPU Package Power", "Vcore", "+12V", "SPD Hub Temperature",
-        "GPU Temperature", "GPU Memory Junction Temperature", "GPU 8-pin #1 Input Voltage",
-        "GPU 8-pin #2 Input Voltage", "GPU 8-pin #3 Input Voltage", "GPU Power (Total)", "GPU Core Load",
-        "GPU Memory Controller Load", "Current DL rate", "Current UP rate", "Total Errors"
-    ];
-
     public static bool HighPriority { get; set; } = false;
     public static bool HighPrecision { get; set; } = false;
     private static int _delayMs = 1000;
@@ -291,7 +282,7 @@ public static class HwHash
     public static List<HwInfoHash> GetRelevantList()
     {
         List<HwInfoHash> list = [];
-        foreach (var sensor in Sensors.Values.Where(sensor => RelevantSensors.Contains(sensor.NameDefault)))
+        foreach (HwInfoHash sensor in Sensors.Values.Where(sensor => Constants.RelevantSensors.Contains(sensor.NameDefault)))
         {
             string clean = sensor.NameDefault.Replace(" ", "").Replace("/", "");
             list.Add(sensor with { NameCustom = clean + sensor.SensorIndex });
