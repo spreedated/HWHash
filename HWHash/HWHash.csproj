@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
     <SignAssembly>True</SignAssembly>
-    <Title>HWHash - HWInfo data to Dictionary</Title>
+    <Title>HwHash - HWInfo data to Dictionary</Title>
     <Authors>Dante Wackermann,DLain</Authors>
-    <Description>HWHash is a static class that grabs HWInfo sensor information and saves it to a Dictionary so it can be easily read and upload to InfluxDB or any other application you may deem useful.</Description>
+    <Description>HwHash is a static class that grabs HWInfo sensor information and saves it to a Dictionary so it can be easily read and upload to InfluxDB or any other application you may deem useful.</Description>
     <RepositoryType>git</RepositoryType>
     <PackageTags>hwhash,hwinfo,hwinfo dictionary,hwinfo shared memory, metrics, hardware metrics,</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

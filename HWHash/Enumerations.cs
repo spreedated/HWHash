@@ -1,4 +1,4 @@
-﻿namespace HWHash
+﻿namespace HwHash
 {
     public enum SENSOR_READING_TYPE
     {
