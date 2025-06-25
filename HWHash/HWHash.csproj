@@ -4,6 +4,7 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>True</SignAssembly>
     <Title>HwHash - HWInfo data to Dictionary</Title>
     <Authors>Dante Wackermann,DLain</Authors>
