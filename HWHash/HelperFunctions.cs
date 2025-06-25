@@ -1,4 +1,5 @@
 ﻿using HwHash;
+using HWHash.Models;
 using System.Diagnostics;
 using System.Linq;
 

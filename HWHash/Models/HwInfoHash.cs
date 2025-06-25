@@ -1,4 +1,4 @@
-﻿namespace HwHash
+﻿namespace HWHash.Models
 {
     public record struct HwInfoHash(
         string ReadingType,

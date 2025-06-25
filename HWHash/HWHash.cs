@@ -47,6 +47,7 @@ public class HwHash : IDisposable
             Stopwatch sw = Stopwatch.StartNew();
             this.ReadSensors();
             sw.Stop();
+
             double ms = sw.ElapsedTicks / (double)Stopwatch.Frequency * 1000;
             this.stats = stats with { CollectionTime = ms, CollectionTimeTicks = sw.ElapsedTicks };
 
@@ -90,6 +91,7 @@ public class HwHash : IDisposable
         {
             this.logger?.LogError(ex, "Error reading sensors from shared memory.");
         }
+
         this.MiniBenchmark(1);
     }
 
@@ -236,7 +238,7 @@ public class HwHash : IDisposable
 
         if (this.LaunchOptions.HighPrecision)
         {
-            _ = WinApi.TimeBeginPeriod(1);
+            _ = WinApiPInvokes.TimeBeginPeriod(1);
         }
 
         this.ReadSensors();
@@ -260,7 +262,7 @@ public class HwHash : IDisposable
 
         if (this.LaunchOptions.HighPrecision)
         {
-            _ = WinApi.TimeEndPeriod(1);
+            _ = WinApiPInvokes.TimeEndPeriod(1);
         }
     }
 

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace HwHash
+namespace HWHash.Models
 {
     public record struct HwinfoHashMini(
         ulong UniqueID,

@@ -3,7 +3,7 @@ using System.Security;
 
 namespace HwHash
 {
-    internal static partial class WinApi
+    internal static partial class WinApiPInvokes
     {
         [SuppressUnmanagedCodeSecurity]
         [LibraryImport("winmm.dll", EntryPoint = "timeBeginPeriod", SetLastError = true)]

@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using HWHash.Models;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +27,8 @@ namespace UnitTests
                 Assert.Fail();
             }
 
-            List<HwHash.HwInfoHash> res = hwHash.GetRelevantList();
-            List<HwHash.HwInfoHash> gol = hwHash.GetOrderedList();
+            List<HwInfoHash> res = hwHash.GetRelevantList();
+            List<HwInfoHash> gol = hwHash.GetOrderedList();
 
             var ss = gol.GroupBy(x => x.ReadingType);
             var u = gol.Where(x => x.ReadingType == "Temperature");
