@@ -19,15 +19,19 @@ namespace UnitTests
         [Test]
         public void StartTest()
         {
-            if (!HwHash.HwHash.Launch())
+            HwHash.HwHash hwHash = new();
+
+            if (!hwHash.Start())
             {
                 Assert.Fail();
             }
 
-            List<HwHash.HwInfoHash> res = HwHash.HwHash.GetRelevantList();
-            List<HwHash.HwInfoHash> gol = HwHash.HwHash.GetOrderedList();
+            List<HwHash.HwInfoHash> res = hwHash.GetRelevantList();
+            List<HwHash.HwInfoHash> gol = hwHash.GetOrderedList();
 
+            var ss = gol.GroupBy(x => x.ReadingType);
             var u = gol.Where(x => x.ReadingType == "Temperature");
+            var uu = gol.Where(x => x.ReadingType == "Usage");
         }
 
         [TearDown]

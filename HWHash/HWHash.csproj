@@ -21,7 +21,7 @@
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0.0</FileVersion>
     <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
-    <NoWarn>1701;1702;IDE0063</NoWarn>
+    <NoWarn>1701;1702;IDE0063;IDE0290</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,6 +42,5 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-
 
 </Project>

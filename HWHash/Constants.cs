@@ -31,5 +31,18 @@
             "Current UP rate",
             "Total Errors"
         ];
+
+        public static readonly string[] SensorTypeStrings =
+        [
+            "None",
+            "Temperature",
+            "Voltage",
+            "Fan",
+            "Current",
+            "Power",
+            "Frequency",
+            "Usage",
+            "Other"
+        ];
     }
 }
