@@ -1,4 +1,4 @@
-﻿namespace HWHash.Models
+﻿namespace HwHash.Models
 {
     public record LaunchOptions
     {
@@ -33,11 +33,11 @@
         /// <summary>
         /// Unused, reserved for future use.
         /// </summary>
-        public bool HighPriority { get; set; }
+        public bool HighPriority { get; init; }
 
         /// <summary>
         /// Sets the TimeBeginPeriod and TimeEndPeriod to 1 ms for higher precision readings.
         /// </summary>
-        public bool HighPrecision { get; set; }
+        public bool HighPrecision { get; init; }
     }
 }

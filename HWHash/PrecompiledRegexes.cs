@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace HWHash
+namespace HwHash
 {
     internal static partial class PrecompiledRegexes
     {

@@ -1,4 +1,4 @@
-﻿using HWHash.Models;
+﻿using HwHash.Models;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -27,7 +27,8 @@ namespace UnitTests
                 Assert.Fail();
             }
 
-            List<HwInfoHash> res = hwHash.GetRelevantList();
+            List<HwInfoHash> res = [.. hwHash.GetRelevantList()];
+
             List<HwInfoHash> gol = hwHash.GetOrderedList();
 
             var ss = gol.GroupBy(x => x.ReadingType);

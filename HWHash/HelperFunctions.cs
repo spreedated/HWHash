@@ -1,9 +1,9 @@
 ﻿using HwHash;
-using HWHash.Models;
+using HwHash.Models;
 using System.Diagnostics;
 using System.Linq;
 
-namespace HWHash
+namespace HwHash
 {
     internal static class HelperFunctions
     {

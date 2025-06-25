@@ -1,7 +1,7 @@
 ﻿using HwHash;
 using System.Runtime.InteropServices;
 
-namespace HWHash.Models
+namespace HwHash.Models
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct HwHashElement

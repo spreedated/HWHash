@@ -5,7 +5,6 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <SignAssembly>True</SignAssembly>
     <Title>HwHash - HWInfo data to Dictionary</Title>
     <Authors>Dante Wackermann,DLain</Authors>
     <Description>HwHash is a static class that grabs HWInfo sensor information and saves it to a Dictionary so it can be easily read and upload to InfluxDB or any other application you may deem useful.</Description>
@@ -16,13 +15,14 @@
     <PackageReadmeFile>readme.md</PackageReadmeFile>
     <PackageIcon></PackageIcon>
     <PackageProjectUrl>https://kernelriot.com</PackageProjectUrl>
-    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <GenerateDocumentationFile Condition="'$(Configuration)'=='Release'">True</GenerateDocumentationFile>
     <VersionPrefix>2.0.0</VersionPrefix>
     <Version>2.0.0</Version>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0.0</FileVersion>
     <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
     <NoWarn>1701;1702;IDE0063;IDE0290</NoWarn>
+    <RootNamespace>HwHash</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
