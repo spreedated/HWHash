@@ -1,17 +1,16 @@
 # HWHash
 ## _HWHash Collects HWiNFO's sensor information in realtime, via shared memory and writes them directly to a easily accessible Dictionary._
-[![N|Solid](https://i.imgur.com/EyqeszJ.png)](https://kernelriot.com)
 
-[![GLWTPL](https://img.shields.io/badge/GLWT-Public_License-red.svg)](https://github.com/me-shaon/GLWTPL)
+This fork transforms HWHash from a singleton static class into a fully object-oriented library,
+making it easier to extend, test, and integrate.
 
+Alongside the OOP refactor, several code optimizations have been applied to further reduce overhead and improve performance.
 
-
-A tiny, singleton (static) class that reads HWiNFO Shared Memory and packs it to a Dictionary.
-
-- 🦄 Single file static class with no external dependencies.
+- 🦄 Object-oriented design for better maintainability and extensibility.
+- 🚀 Improved performance with optimized data handling and reduced overhead.
 - 😲 Tiny footprint, no memory leaks and 0.01% CPU Usage.
-- 💨Blazing fast, <1millisecond to iterate over 300 sensors.
-- ✨It simply works.
+- 💨 Blazing fast, <1 millisecond to iterate over 300 sensors.
+- ✨ It simply works.
 
 ## Features
 
@@ -22,13 +21,6 @@ A tiny, singleton (static) class that reads HWiNFO Shared Memory and packs it to
 - Exports sensor information in the same order HWiNFO UI
 - Exports to a List or JSON string in both Full and Minified versions
 **check the minified struct version below.*
-
-Installation
----
-Nuget package is available:
-```c#
-NuGet\Install-Package HWHash
-```
 
 Usage
 ---
@@ -45,56 +37,10 @@ There are three startup options for HWHash.
 | Option | Default |
 | ------ | ------ |
 | HighPrecision | ![](https://img.shields.io/static/v1?label=&message=false&color=ff7da8)  |
-| HighPriority | ![](https://img.shields.io/static/v1?label=&message=false&color=ff7da8) |
 | Delay | ![](https://img.shields.io/static/v1?label=&message=1000ms&color=b0a2f9) |
 
 ---
-How to configure
----
-*Make sure you set the parameters **before** Lauching the HWHash thread.*
 
-High Precision:
-```c#
-HWHash.HighPrecision = true;
-```
-High Priority:
-```c#
-HWHash.HighPriority = true;
-```
-
-Delay:
-```c#
-//update the Dictionary every 500ms (twice per second)
-HWHash.SetDelay(500);
-```
-
-Then -> ```Launch()```
-```c#
-HWHash.HighPrecision = true;
-HWHash.HighPriority = true;
-HWHash.SetDelay(500);
-HWHash.Launch();
-```
----
-Basic Functions
----
-```c#
-//Returns a List<HWINFO_HASH> in the same order as HWiNFO UI
-List<HWiNFO_HASH> MyHWHashList = HWHash.GetOrderedList();
-//Same as above but in a minified version
-List<HWINFO_HASH_MINI> MyHWHashListMini = HWHash.GetOrderedListMini();
-```
-JSON Functions
----
-```c#
-//Returns a JSON string containing all sensors information (full/mini)
-string _HWHashJson = HWHash.GetJsonString();
-string _HWHashJsonMini = HWHash.GetJsonStringMini();
-//If set to true, it will return a ordered list*
-string _HWHashJsonOrdered = HWHash.GetJsonString(true);
-//Same for the minified version
-string _HWHashJsonMiniOrdered = HWHash.GetJsonStringMini(true);
-```
 Default Struct
 ---
 This is the base struct, it contains all HWiNFO sensor data, such as min, max and avg values.
@@ -138,93 +84,48 @@ Relevant Sensor List
 ---
 If you prefer to avoid manually searching for sensor IDs and wish to access a curated List<HWINFO_HASH> of relevant sensors directly, use this function.
 ```c#
-	public static List<string> RelevantSensorsList { get; } = new List<string>
-	{
-		"Physical Memory Load",
-		"Physical Memory Used",
-		"P-core 0 VID",
-		"P-core 0 Clock",
-		"Ring/LLC Clock",
-		"Total CPU Usage",
-		"CPU Package",
-		"Core Max",
-		"CPU Package Power",
-		"Vcore",
-		"+12V",
-		"SPD Hub Temperature",
-		"GPU Temperature",
-		"GPU Memory Junction Temperature",
-		"GPU 8-pin #1 Input Voltage",
-		"GPU 8-pin #2 Input Voltage",
-		"GPU 8-pin #3 Input Voltage",
-		"GPU Power (Total)",
-		"GPU Core Load",
-		"GPU Memory Controller Load",
-		"Current DL rate",
-		"Current UP rate",
-		"Total Errors"
-	};
-
+public readonly static string[] RelevantSensors =
+    [
+        "Physical Memory Load",
+        "Physical Memory Used",
+        "P-core 0 VID",
+        "P-core 0 Clock",
+        "Ring/LLC Clock",
+        "Total CPU Usage",
+        "CPU Package",
+        "Core Max",
+        "CPU Package Power",
+        "Vcore",
+        "+12V",
+        "SPD Hub Temperature",
+        "GPU Temperature",
+        "GPU Memory Junction Temperature",
+        "GPU 8-pin #1 Input Voltage",
+        "GPU 8-pin #2 Input Voltage",
+        "GPU 8-pin #3 Input Voltage",
+        "GPU Power (Total)",
+        "GPU Core Load",
+        "GPU Memory Controller Load",
+        "Current DL rate",
+        "Current UP rate",
+        "Total Errors"
+    ];
 ```
-
-PowerShell Integration
----
-In case you want to invoke **HWHash** from **PowerShell**, it is possible to do so, follow the steps below:
-
- - Ensure you have **PowerShell 7.0 or newer** [\[Here\]](https://github.com/PowerShell/PowerShell/releases/download/v7.4.0/PowerShell-7.4.0-win-x64.msi)
- - Download the latest release of **HWHash** DLL [\[Here\]](https://github.com/layer07/HWHash/releases/download/release/HWHash.dll)
- - Create a test script with the code below
-
-```powershell
-#Don't forget to change the line below
-$Path = "A:\GITHUB\HWHash\bin\Debug\net6.0\HWHash.dll"
-$ClassName = "HWHash"
-$MethodLaunch = "Launch"
-$MethodJsonStringMini = "GetJsonStringMini"
-
-Add-Type -Path $Path
-
-$Type = [System.Reflection.Assembly]::LoadFrom($Path).GetTypes() | Where-Object { $_.Name -eq $ClassName }
-
-if ($Type -ne $null) {
-    $Instance = [Activator]::CreateInstance($Type)
-    $Type.GetMethod($MethodLaunch).Invoke($Instance, $null)
-
-    function Get-JsonStringMini {
-        param (
-            [bool]$Order = $false
-        )
-
-        $result = $Type.GetMethod($MethodJsonStringMini).Invoke($Instance, @($Order))
-        Write-Host $result
-    }
-
-    Get-JsonStringMini -Order $true
-} else {
-    Write-Host "Type '$ClassName' not found in the assembly."
-}
-```
-Result:
-
-<p align="center">
-  <img src="https://github.com/layer07/HWHash/blob/main/media/PowerShell.webp">
-</p>
-
 
 Performance
 ---
 You can access HWHash performance metrics by invoking the following method:
 ```c#
-HWHashStats _Stats = HWHash.GetHWHashStats();
+GetHWHashStats();
 ```
  HWHashStats *struct*
 ```c#
 public record struct HWHashStats
-    {
-        public long CollectionTime { get; set; }
-        public uint TotalCategories { get; set; }
-        public uint TotalEntries { get; set; }
-    }
+{
+    public long CollectionTime { get; set; }
+    public uint TotalCategories { get; set; }
+    public uint TotalEntries { get; set; }
+}
 ```
 The most critical information we want to inspect is
 ```c#
@@ -248,16 +149,6 @@ Usually sensor access/read is deadly fast (nanoseconds) and it is never a bottle
 
 Since HWiNFO fastest "poll rate" is 50MS, it is not a problem, but it is definitely something that we should keep an eye on when reading from sensors exposed by our hardware.
 
-Usecase
----
-CruelMonitor was built using HWHash as its 'data provider.' CruelMonitor uses C# backend data source, it also serves as a WebSockets server to share the content in realtime, messages packed with MessagePack and are delivered with minimal delays.
-
-Performance metrics are drawed directly on the Windows Desktop, 60FPS, <1ms delay and low CPU usage.
-<p align="center">
-  <img src="https://github.com/layer07/HWHash/blob/main/media/HWHashDemo1.webp">
-</p>
-
-
 To-do
 ---
 
@@ -267,7 +158,6 @@ To-do
 - [ ] Option to create triggers/alerts
 - [ ] Save presets and sensor preferences
 - [ ] Visual interface to select/deselect sensors
-
 
 ### Added  💖
 - [x] JSON export with no third party libraries
